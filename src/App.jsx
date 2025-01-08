@@ -1,28 +1,46 @@
-// App.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import BlogList from './components/BlogList';
+import BlogForm from './components/BlogForm';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import ArticleForm from './components/ArticleForm';
-import ArticleList from './components/ArticleList';
 
-function App() {
-  const [articles, setArticles] = useState([]);
+const App = () => {
+  const [blogs, setBlogs] = useState([]);
+  const [currentBlog, setCurrentBlog] = useState(null);
 
-  const addArticle = (article) => {
-    setArticles([...articles, article]);
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
+
+  const fetchBlogs = async () => {
+    const response = await axios.get('http://localhost:3000/posts/');
+    setBlogs(response.data.data);
   };
 
-  const handleDelete = (id) => {
-    const newArticles = articles.filter(article => article.id !== id);
-    setArticles(newArticles);
+  const handleDelete = async (id) => {
+    await axios.delete(`http://localhost:3000/posts/${id}`);
+    fetchBlogs();
+  };
+
+  const handleSave = async (blog) => {
+    if (blog.id) {
+      await axios.put(`http://localhost:3000/posts/${blog.id}`, blog);
+    } else {
+      await axios.post('http://localhost:3000/posts/', blog);
+    }
+    setCurrentBlog(null);
+    fetchBlogs();
   };
 
   return (
-    <div className="container mt-3">
-      <h1>Gestione Articoli del Blog</h1>
-      <ArticleForm addArticle={addArticle} />
-      <ArticleList articles={articles} onDelete={handleDelete} />
+    <div className="container mt-5">
+      <h1>Gestione Blog</h1>
+      <BlogForm blog={currentBlog} onSave={handleSave} />
+      {blogs.length > 0 ?
+        <BlogList blogs={blogs} onDelete={handleDelete} onEdit={setCurrentBlog} />
+        : ''}
     </div>
   );
-}
+};
 
 export default App;
